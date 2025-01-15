@@ -13,6 +13,7 @@ import ffmpegPath from "ffmpeg-static"
 
 dotenv.config();
 
+const MAX_TEXT_LENGTH = 4096;
 const AUDIO_FOLDER = path.join(__dirname, "..", "wwwroot");
 const MAX_AUDIO_DURATION = 10 * 60;
 
@@ -70,7 +71,7 @@ bot.on(message("audio"), async ctx => {
             transcriptions += result;
         }
 
-        await ctx.reply(transcriptions);
+        await sendLongText(ctx, transcriptions);
     } catch (e){
         console.log("Error - ", e);
         await ctx.reply("Internal server error, please contact with @elizabethcrack")
@@ -98,6 +99,26 @@ async function downloadFile(url: string, path: string) {
         writer.on('finish', resolve);
         writer.on('error', reject);
     });
+}
+
+async function sendLongText(ctx: any, text: string) {
+    const messages = splitText(text);
+    for (const item of messages) {
+        await ctx.reply(item);
+    }
+}
+
+function splitText(text: string) {
+    const result = [];
+    let start = 0;
+
+    while (start < text.length) {
+        const end = start + MAX_TEXT_LENGTH;
+        result.push(text.slice(start, end));
+        start = end;
+    }
+
+    return result;
 }
 
 async function splitAudio(filePath: string, outputDir: string) {
